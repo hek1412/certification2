@@ -1,0 +1,37 @@
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres-cont
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - postgres-python
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command: postgres
+
+  app:
+    build: ./app
+    volumes:
+      - ./app:/app
+    working_dir: /app
+    networks:
+      - postgres-python
+    command: python3 run.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+networks:
+  postgres-python:
+volumes:
+  local_postgres_data:
